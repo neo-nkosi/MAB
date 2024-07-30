@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import interpolate
+from scipy.optimize import curve_fit
 
-#Multi armed bandit
+
+# Multi armed bandit
 class MultiArmedBandit:
     def __init__(self, k=10):
         self.k = k
@@ -17,21 +18,14 @@ class MultiArmedBandit:
         self.arm_counts[arm] += 1
         self.q_values[arm] += (reward - self.q_values[arm]) / self.arm_counts[arm]
 
-class MultiArmedBanditOptimistic:
-    def __init__(self, k=10, initial_value=5):
-        self.k = k
-        # set a mean of 0, variance of 3 for the rewards each arm
-        self.means = np.random.normal(0, 3, k)
-        self.q_values = np.full(k, initial_value)  # optimistic initial q-values for each arm
-        self.arm_counts = np.zeros(k)  # number of times each arm is pulled
-
-    def pull(self, arm):
-        return np.random.normal(self.means[arm], 1)
-
-    def update_q_value(self, arm, reward):
-        self.arm_counts[arm] += 1
-        self.q_values[arm] += (reward - self.q_values[arm]) / self.arm_counts[arm]
-
+#Inherits the means of the Multi armed bandit above for consistency in algo reward comparison
+class MultiArmedBanditOptimistic(MultiArmedBandit):
+    def __init__(self, k=10, initial_value=5, means=None):
+        super().__init__(k)
+        if means is not None:
+            self.means = means
+        self.q_values = np.full(k, initial_value)
+        self.arm_counts = np.zeros(k)
 
 #Epsilon Greedy
 def epsilon_greedy(mab, epsilon=0.1, steps=1000):
@@ -146,6 +140,10 @@ ucb_rewards = simulate_ucb(k=k, steps=steps, runs=runs)
 plot_comparison(e_greedy_rewards, optimistic_rewards, ucb_rewards, steps=steps)
 
 
+def parabolic_func(x, a, b, c):
+    return a * x ** 2 + b * x + c
+
+
 def plot_summary_comparison(algorithms, param_ranges):
     plt.figure(figsize=(12, 8))
 
@@ -159,13 +157,18 @@ def plot_summary_comparison(algorithms, param_ranges):
             avg_reward = run_algorithm(algo, param)
             rewards.append(avg_reward)
 
-        # Create a smooth curve using interpolation
-        x_smooth = np.logspace(np.log10(param_range[0]), np.log10(param_range[-1]), 200)
-        f = interpolate.interp1d(param_range, rewards, kind='cubic')
-        y_smooth = f(x_smooth)
+        # Convert to log scale for fitting
+        log_param_range = np.log10(param_range)
+
+        # Fit parabolic function
+        popt, _ = curve_fit(parabolic_func, log_param_range, rewards)
+
+        # Create smooth curve using the fitted parabolic function
+        x_smooth = np.linspace(log_param_range.min(), log_param_range.max(), 200)
+        y_smooth = parabolic_func(x_smooth, *popt)
 
         # Plot both the original points and the smooth curve
-        plt.plot(x_smooth, y_smooth, color=colors[i], label=labels[i])
+        plt.plot(10 ** x_smooth, y_smooth, color=colors[i], label=labels[i])
         plt.scatter(param_range, rewards, color=colors[i], marker=markers[i], s=30, alpha=0.6)
 
     plt.xscale('log')
@@ -183,7 +186,6 @@ def plot_summary_comparison(algorithms, param_ranges):
     plt.tight_layout()
     plt.savefig('mab_summary_comparison.png', dpi=300, bbox_inches='tight')
     plt.show()
-
 #parameter ranges and number of points
 algorithms = [epsilon_greedy, ucb, greedy_optimistic]
 param_ranges = [
