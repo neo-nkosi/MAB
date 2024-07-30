@@ -37,15 +37,16 @@ def simulate_bandit(k=10, epsilon=0.1, steps=1000, runs=100):
         all_rewards[run] = rewards
     return all_rewards
 
-def plot_results(all_rewards, steps=1000, window=100):
+def plot_results(all_rewards, steps=1000, window=100, plot = True):
     averaged_rewards = np.mean(all_rewards, axis=0)
     smoothed_rewards = np.convolve(averaged_rewards, np.ones(window)/window, mode='valid')
 
-    plt.plot(smoothed_rewards)
-    plt.xlabel('Steps')
-    plt.ylabel('Average Reward')
-    plt.title('ε-Greedy Multi-Armed Bandit Performance')
-    plt.show()
+    if plot:
+        plt.plot(smoothed_rewards)
+        plt.xlabel('Steps')
+        plt.ylabel('Average Reward')
+        plt.title('ε-Greedy Multi-Armed Bandit Performance')
+        plt.show()
 
 # Parameters
 k = 10
