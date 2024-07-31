@@ -108,14 +108,13 @@ def run_algorithm(algorithm, param, k=10, steps=1000, runs=100):
     return total_reward / runs
 
 
-def plot_comparison(e_greedy_rewards, optimistic_rewards, ucb_rewards, steps=1000, window=100):
+def plot_comparison(e_greedy_rewards, optimistic_rewards, ucb_rewards, steps=1000):
     plt.figure(figsize=(12, 6))
 
     for rewards, label in zip([e_greedy_rewards, optimistic_rewards, ucb_rewards],
                               ['ε-Greedy (ε=0.1)', 'Greedy with Optimistic Init (Q1=5)', 'UCB (c=2)']):
         averaged_rewards = np.mean(rewards, axis=0)
-        smoothed_rewards = np.convolve(averaged_rewards, np.ones(window) / window, mode='valid')
-        plt.plot(smoothed_rewards, label=label)
+        plt.plot(averaged_rewards, label=label)
 
     plt.xlabel('Steps')
     plt.ylabel('Average Reward')
