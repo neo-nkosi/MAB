@@ -111,10 +111,10 @@ def plot_grid_world_with_path(grid, path):
     path_y = [rows - 1 - state[0] + 0.5 for state in path]
     ax.plot(path_x, path_y, 'r-', linewidth=2, markersize=8, marker='o')
 
-    ax.plot(path_x[0], path_y[0], 'go', markersize=12, label='Start')
-    ax.plot(path_x[-1], path_y[-1], 'bo', markersize=12, label='Goal')
+    ax.plot(path_x[0], path_y[0], 'ro', markersize=12, label='Start')
+    ax.plot(path_x[-1], path_y[-1], 'go', markersize=12, label='Goal')
 
-    ax.set_title("Grid World with Greedy Agent's Path")
+    ax.set_title("Grid World with Agent Using Optimal Value Function")
     ax.set_xticks(range(cols))
     ax.set_yticks(range(rows))
     ax.set_xticklabels(range(cols))
