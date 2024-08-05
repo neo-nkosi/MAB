@@ -3,12 +3,14 @@ rows = 7
 cols = 7
 # Created a grid of pairs. 1st element is the type of block (available, obstacle, goal).
 # 2nd element is the optimal value for that block
-grid = [[('.',0) for _ in range(cols)] for _ in range(rows)]
+grid = [[('.',-1) for _ in range(cols)] for _ in range(rows)]
 
 # goal position
-grid[0][6] = ('G',0)
+goal_position = (0,6)
+grid[0][6] = ('G',20)
 
 # initial position
+initial_position = (6,0)
 grid[6][0] = ('S',0)
 
 # adding obstacles
