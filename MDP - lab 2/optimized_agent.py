@@ -37,7 +37,7 @@ for i in range(rows):
 # Print the grid
 for i in range(rows):
     for j in range(cols):
-        print(f"{grid[i][j][0]}:{grid[i][j][1]:<2}", end=" ")
+        print(f"{grid[i][j][0]},{grid[i][j][1]:<2}", end=" ")
     print()
 
 actions = {
@@ -105,7 +105,7 @@ def plot_grid_world_with_path(grid, path):
         for j in range(cols):
             color = 'white' if grid[i][j][0] != 'X' else 'gray'
             ax.add_patch(plt.Rectangle((j, rows - 1 - i), 1, 1, fill=True, facecolor=color, edgecolor='black'))
-            ax.text(j + 0.5, rows - 1 - i + 0.5, f"{grid[i][j][0]}\n{grid[i][j][1]}", ha='center', va='center')
+            ax.text(j + 0.5, rows - 1 - i + 0.5, f"{grid[i][j][1]}", ha='center', va='center')
 
     path_x = [state[1] + 0.5 for state in path]
     path_y = [rows - 1 - state[0] + 0.5 for state in path]
@@ -127,11 +127,11 @@ def plot_grid_world_with_path(grid, path):
 # Plot the grid world with the agent's path
 plot_grid_world_with_path(grid, greedy_path)
 
-print("\nGreedy agent's path:")
-for step, state in enumerate(greedy_path):
-    print(f"Step {step}: {state}")
-
-print(f"\nTotal reward: {total_reward}")
+# print("\nGreedy agent's path:")
+# for step, state in enumerate(greedy_path):
+#     print(f"Step {step}: {state}")
+#
+# print(f"\nTotal reward: {total_reward}")
 
 # Example of manual input (uncomment to use)
 # current_state = initial_position
