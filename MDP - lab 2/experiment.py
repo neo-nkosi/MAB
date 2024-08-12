@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 # Gridworld setup
 rows, cols = 7, 7
 grid = [[('.', -1) for _ in range(cols)] for _ in range(rows)]
-goal_position = (0, 6)
+goal_position = (0, 0)
 initial_position = (6, 0)
 grid[0][6] = ('G', 20)
 grid[6][0] = ('S', 0)
