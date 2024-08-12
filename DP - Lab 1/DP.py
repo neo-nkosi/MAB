@@ -1,3 +1,6 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
 rows = 4
 cols = 4
 
@@ -9,9 +12,9 @@ grid = [[('.', -1) for _ in range(cols)] for _ in range(rows)]
 goal_position = (0, 0)
 grid[0][0] = ('G', 0)  # Goal state with reward 0
 
-# initial position (you can change this to whatever starting point you want)
+# initial position
 initial_position = (3, 3)  # Bottom right corner
-grid[3][3] = ('S', 0)  # Marking the initial position (optional)
+grid[3][3] = ('S', 0)  # Marking the initial position 
 
 # Print the grid
 for i in range(rows):
@@ -25,7 +28,6 @@ actions = {
     'S': (1, 0),
     'W': (0, -1)
 }
-
 
 def execute_action(action, state):
     x, y = state
@@ -42,21 +44,48 @@ def execute_action(action, state):
         # agent moves out of bounds, keep agent at same position with -1 penalty
         return state, -1, False
 
+def in_place_eval(gamma = 1.0, threshold=0.01):
+    V = np.zeros((rows,cols))
+    delta = float('inf')
 
-current_state = initial_position
-done = False
+    iterations =0
+    while delta >= threshold:
+        iterations+=1
+        delta = 0
+        for i in range(rows):
+            for j in range(cols):
+                if (i,j) == goal_position:
+                    continue
+            
+                v = V[i][j]
+                new_V = 0
 
-while not done:
-    action = input("Please enter move (N/E/S/W): ").strip().upper()
-    if action not in actions:
-        print("Invalid action. Please enter N, E, S, or W.")
-        continue
+                for action in actions.values():
+                    next_state, reward, _ = execute_action(action,(i,j))
+                    nx, ny = next_state
+                    new_V += 0.25 * (reward + gamma * V[nx][ny])
+                
+                V[i][j] = new_V
+                delta = max(delta, abs(v-V[i][j]))
 
-    new_state, reward, done = execute_action(actions[action], current_state)
-    print("new state:", new_state)
-    print("reward:", reward)
+    return V, iterations
 
-    current_state = new_state
+V, iterations = in_place_eval()
 
-    if done:
-        print("Goal reached! Episode ended.")
+print("Number of iterations until convergence:", iterations)
+
+# Create a heatmap from the value function
+plt.figure(figsize=(6,6))
+plt.imshow(V, cmap='viridis', origin='upper')
+plt.colorbar(label='Value')
+plt.title('Heatmap of In-Place Value Evaluation')
+plt.xlabel('Columns')
+plt.ylabel('Rows')
+
+for i in range(rows):
+    for j in range(cols):
+        plt.text(j, i, f'{V[i,j]:.2f}', ha='center', va='center', color='white')
+
+
+plt.show()
+
