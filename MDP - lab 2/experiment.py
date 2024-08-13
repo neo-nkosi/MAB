@@ -1,6 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Student Numbers:
+# 2437872
+# 2428608
+# 2489197
+# 2456718
+
 # Gridworld setup
 rows, cols = 7, 7
 grid = [[('.', -1) for _ in range(cols)] for _ in range(rows)]
