@@ -1,35 +1,215 @@
+###
+# Group Members
+# Group member names and student numbers
+# Neo Nkosi:2437872
+# Joshua Moorhead:2489197
+# Naomi Muzamani:2456718
+# PraiseGod Emenike:2428608
+###
 import numpy as np
-
 from environments.gridworld import GridworldEnv
-env = GridworldEnv(shape=[5, 5], terminal_states=[24], terminal_reward=0, step_reward=-1)
+import timeit
+import matplotlib.pyplot as plt
 
-# get actions
-actions = {
-    0: 'U',
-    1: 'R',
-    2: 'D',
-    3: 'L'
-}
+def generate_random_trajectory(env, max_steps=100):
+    state = env.reset()
+    trajectory = []
+    done = False
+    step = 0
 
-# trajectory using a uniform random policy
-state = env.reset()  # begin at the initial state
-set_of_trajectory = []
+    while not done and step < max_steps:
+        action = env.action_space.sample()  # Choose a random action
+        next_state, reward, done, _ = env.step(action)
+        trajectory.append((state, action))
+        state = next_state
+        step += 1
 
-done = False
-while not done:
-    action = np.random.choice([0, 1, 2, 3])  # randomly choose an action
-    next_state, reward, done, _ = env.step(action)
-    set_of_trajectory.append((state, actions[action]))
-    state = next_state
+    return trajectory
 
-# 5x5 grid to display the trajectory
-grid = [['o' for _ in range(5)] for _ in range(5)]
-for (state, action) in set_of_trajectory:
-    row, col = divmod(state, 5)
-    grid[row][col] = action
+def print_trajectory_grid(trajectory, shape):
+    action_symbols = ['U', 'R', 'D', 'L']  # UP, RIGHT, DOWN, LEFT
+    grid = [['o' for _ in range(shape[1])] for _ in range(shape[0])]
 
-for row in grid:
-    print(' '.join(row))
+    for state, action in trajectory:
+        row, col = state // shape[1], state % shape[1]
+        grid[row][col] = action_symbols[action]
 
-# visualize the final state of the environment
-env.render()
+    print("Trajectory (actions taken at each state):")
+    for row in grid:
+        print(' '.join(row))
+
+    # Print legend
+    print("\nContext:")
+    print("U: Up, R: Right, D: Down, L: Left")
+    print("o: Unvisited state")
+def policy_evaluation(env, policy, discount_factor=1.0, theta=0.00001):
+    """
+    Evaluate a policy given an environment and a full description of the environment's dynamics.
+
+    Args:
+
+        env: OpenAI environment.
+            env.P represents the transition probabilities of the environment.
+            env.P[s][a] is a list of transition tuples (prob, next_state, reward, done).
+            env.observation_space.n is a number of states in the environment.
+            env.action_space.n is a number of actions in the environment.
+        policy: [S, A] shaped matrix representing the policy.
+        theta: We stop evaluation once our value function change is less than theta for all states.
+        discount_factor: Gamma discount factor.
+
+    Returns:
+        Vector of length env.observation_space.n representing the value function.
+    """
+
+
+
+def policy_iteration(env, policy_evaluation_fn=policy_evaluation, discount_factor=1.0):
+    """
+    Iteratively evaluates and improves a policy until an optimal policy is found.
+
+    Args:
+        env: The OpenAI environment.
+        policy_evaluation_fn: Policy Evaluation function that takes 3 arguments:
+            env, policy, discount_factor.
+        discount_factor: gamma discount factor.
+
+    Returns:
+        A tuple (policy, V).
+        policy is the optimal policy, a matrix of shape [S, A] where each state s
+        contains a valid probability distribution over actions.
+        V is the value function for the optimal policy.
+
+    """
+
+    def one_step_lookahead(state, V):
+        """
+        Helper function to calculate the value for all action in a given state.
+
+        Args:
+            state: The state to consider (int)
+            V: The value to use as an estimator, Vector of length env.observation_space.n
+
+        Returns:
+            A vector of length env.action_space.n containing the expected value of each action.
+        """
+        raise NotImplementedError
+
+    raise NotImplementedError
+
+
+def value_iteration(env, theta=0.0001, discount_factor=1.0):
+    """
+    Value Iteration Algorithm.
+
+    Args:
+        env: OpenAI environment.
+            env.P represents the transition probabilities of the environment.
+            env.P[s][a] is a list of transition tuples (prob, next_state, reward, done).
+            env.observation_space.n is a number of states in the environment.
+            env.action_space.n is a number of actions in the environment.
+        theta: We stop evaluation once our value function change is less than theta for all states.
+        discount_factor: Gamma discount factor.
+
+    Returns:
+        A tuple (policy, V) of the optimal policy and the optimal value function.
+    """
+
+    def one_step_lookahead(state, V):
+        """
+        Helper function to calculate the value for all action in a given state.
+
+        Args:
+            state: The state to consider (int)
+            V: The value to use as an estimator, Vector of length env.observation_space.n
+
+        Returns:
+            A vector of length env.action_space.n containing the expected value of each action.
+        """
+        raise NotImplementedError
+
+    raise NotImplementedError
+
+
+def main():
+    # Create Gridworld environment with size of 5 by 5, with the goal at state 24. Reward for getting to goal state is 0, and each step reward is -1
+    env = GridworldEnv(shape=[5, 5], terminal_states=[
+                       24], terminal_reward=0, step_reward=-1)
+    state = env.reset()
+    print("")
+    env.render()
+    print("")
+
+    trajectory = generate_random_trajectory(env)
+
+    #debugging for trajectory
+    """print("action at each state for first t timesteps:")
+    for state, action in trajectory:
+        print(f"State: {state}, Action: {action}")"""
+
+    #print direction of the action taken at each state, shaped as the grid
+    print_trajectory_grid(trajectory, env.shape)
+
+
+
+    print("-----------------------------------")
+
+    # TODO: generate random policy
+    num_actions = env.action_space.n
+    num_states = env.observation_space.n
+
+    random_policy = np.ones([num_states, num_actions]) / num_actions
+
+    print("*" * 5 + " Policy evaluation " + "*" * 5)
+    print("")
+
+    # TODO: evaluate random policy
+    v = policy_evaluation(env, random_policy)
+
+    # TODO: print state value for each state, as grid shape
+
+
+    # Test: Make sure the evaluated policy is what we expected
+    expected_v = np.array([-106.81, -104.81, -101.37, -97.62, -95.07,
+                           -104.81, -102.25, -97.69, -92.40, -88.52,
+                           -101.37, -97.69, -90.74, -81.78, -74.10,
+                           -97.62, -92.40, -81.78, -65.89, -47.99,
+                           -95.07, -88.52, -74.10, -47.99, 0.0])
+    np.testing.assert_array_almost_equal(v, expected_v, decimal=2)
+
+    print("*" * 5 + " Policy iteration " + "*" * 5)
+    print("")
+    # TODO: use  policy improvement to compute optimal policy and state values
+    policy, v = [], []  # call policy_iteration
+
+    # TODO Print out best action for each state in grid shape
+
+    # TODO: print state value for each state, as grid shape
+
+    # Test: Make sure the value function is what we expected
+    expected_v = np.array([-8., -7., -6., -5., -4.,
+                           -7., -6., -5., -4., -3.,
+                           -6., -5., -4., -3., -2.,
+                           -5., -4., -3., -2., -1.,
+                           -4., -3., -2., -1., 0.])
+    np.testing.assert_array_almost_equal(v, expected_v, decimal=1)
+
+    print("*" * 5 + " Value iteration " + "*" * 5)
+    print("")
+    # TODO: use  value iteration to compute optimal policy and state values
+    policy, v = [], []  # call value_iteration
+
+    # TODO Print out best action for each state in grid shape
+
+    # TODO: print state value for each state, as grid shape
+
+    # Test: Make sure the value function is what we expected
+    expected_v = np.array([-8., -7., -6., -5., -4.,
+                           -7., -6., -5., -4., -3.,
+                           -6., -5., -4., -3., -2.,
+                           -5., -4., -3., -2., -1.,
+                           -4., -3., -2., -1., 0.])
+    np.testing.assert_array_almost_equal(v, expected_v, decimal=1)
+
+
+if __name__ == "__main__":
+    main()

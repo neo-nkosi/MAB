@@ -1,3 +1,9 @@
+# Group member names and student numbers
+# Neo Nkosi - 2437872
+# Joshua Moorhead - 2489197
+# Naomi Muzamani - 2456718
+# PraiseGod Emenike - 2428608
+
 import numpy as np
 import matplotlib.pyplot as plt
 
