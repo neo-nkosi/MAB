@@ -8,7 +8,7 @@
 ###
 import numpy as np
 from environments.gridworld import GridworldEnv
-import timeit
+import time
 import matplotlib.pyplot as plt
 
 def generate_random_trajectory(env, max_steps=100):
@@ -238,6 +238,37 @@ def main():
                            -5., -4., -3., -2., -1.,
                            -4., -3., -2., -1., 0.])
     np.testing.assert_array_almost_equal(v, expected_v, decimal=1)
+
+    # Timing Analysis and Plotting
+    discount_rates = np.logspace(-0.2, 0, num=30)
+    policy_iteration_times = []
+    value_iteration_times = []
+
+    for discount_rate in discount_rates:
+        policy_iteration_time = 0
+        for _ in range(10):
+            start_time = time.time()
+            policy_iteration(env, discount_factor=discount_rate)
+            policy_iteration_time += time.time() - start_time
+        policy_iteration_times.append(policy_iteration_time / 10)
+
+        value_iteration_time = 0
+        for _ in range(10):
+            start_time = time.time()
+            value_iteration(env, discount_factor=discount_rate)
+            value_iteration_time += time.time() - start_time
+        value_iteration_times.append(value_iteration_time / 10)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(discount_rates, policy_iteration_times, label='Policy Iteration')
+    plt.plot(discount_rates, value_iteration_times, label='Value Iteration')
+    plt.xlabel('Discount Rate (γ)')
+    plt.ylabel('Average Time (seconds)')
+    plt.title('Average Running Time vs Discount Rate')
+    plt.xscale('log')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 
 if __name__ == "__main__":
