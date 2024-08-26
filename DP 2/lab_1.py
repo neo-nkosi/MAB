@@ -118,7 +118,7 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0):
 
     def one_step_lookahead(state, V):
         """
-        Helper function to calculate the value for all action in a given state.
+        Helper function to calculate the value for all actions in a given state.
 
         Args:
             state: The state to consider (int)
@@ -127,9 +127,30 @@ def value_iteration(env, theta=0.0001, discount_factor=1.0):
         Returns:
             A vector of length env.action_space.n containing the expected value of each action.
         """
-        raise NotImplementedError
+        action_values = np.zeros(env.action_space.n)
+        for action in range(env.action_space.n):
+            for probability, next_state, reward, done in env.P[state][action]:
+                action_values[action] += probability * (reward + discount_factor * V[next_state])
+        return action_values
 
-    raise NotImplementedError
+    Values = np.zeros(env.observation_space.n)
+    while True:
+        delta = 0
+        for states in range(env.observation_space.n):
+            v = Values[states]
+            Values[states] = np.max(one_step_lookahead(states, Values))
+            delta = max(delta, np.abs(v - Values[states]))
+        if delta < theta:
+            break
+
+    # Create a deterministic policy using the optimal value function
+    policy = np.zeros([env.observation_space.n, env.action_space.n])
+    for states in range(env.observation_space.n):
+        action_values = one_step_lookahead(states, Values)
+        best_action = np.argmax(action_values)
+        policy[states, best_action] = 1.0
+
+    return policy, Values
 
 
 def main():
@@ -199,12 +220,16 @@ def main():
 
     print("*" * 5 + " Value iteration " + "*" * 5)
     print("")
-    # TODO: use  value iteration to compute optimal policy and state values
-    policy, v = [], []  # call value_iteration
 
-    # TODO Print out best action for each state in grid shape
+    policy, v = value_iteration(env)
 
-    # TODO: print state value for each state, as grid shape
+    # print out best action for each state in grid shape
+    print("Optimal Policy (Value Iteration):")
+    optimal_policy_grid = np.array([np.argmax(policy[s]) for s in range(env.observation_space.n)])
+    print(optimal_policy_grid.reshape(env.shape))
+    # print state value for each state, as grid shape
+    print("State values (Value Iteration):")
+    print(v.reshape(env.shape))
 
     # Test: Make sure the value function is what we expected
     expected_v = np.array([-8., -7., -6., -5., -4.,
