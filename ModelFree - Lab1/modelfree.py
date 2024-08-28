@@ -1,10 +1,18 @@
+### Group Members
+# Group member names and student numbers
+# Neo Nkosi:2437872
+# Joshua Moorhead:2489197
+# Naomi Muzamani:2456718
+# PraiseGod Emenike:2428608
+###
+
 import numpy as np
 import gym
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from tqdm import tqdm
 
-# create environment
+# Create environment
 env = gym.make('CliffWalking-v0')
 
 epsilon = 0.1
@@ -14,34 +22,34 @@ num_episodes = 200
 num_runs = 100
 
 
-def epsilon_greedy_policy(Q, state, epsilon):
+def epsilon_greedy(Q, state, epsilon):
     if np.random.random() < epsilon:
         return env.action_space.sample()
     else:
         return np.argmax(Q[state, :])
 
 
-def sarsa_lambda(env, num_episodes, lambda_value):
+def sarsa(env, num_episodes, lmbda):
     Q = np.zeros((env.observation_space.n, env.action_space.n))
     e = np.zeros((env.observation_space.n, env.action_space.n))
     episode_returns = np.zeros(num_episodes)
 
     for episode in range(num_episodes):
         state, _ = env.reset()
-        action = epsilon_greedy_policy(Q, state, epsilon)
+        action = epsilon_greedy(Q, state, epsilon)
         total_reward = 0
         done = False
 
         while not done:
             next_state, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
-            next_action = epsilon_greedy_policy(Q, next_state, epsilon)
+            next_action = epsilon_greedy(Q, next_state, epsilon)
 
             delta = reward + gamma * Q[next_state, next_action] - Q[state, action]
             e[state, action] += 1
 
             Q += alpha * delta * e
-            e *= gamma * lambda_value
+            e *= gamma * lmbda
 
             state = next_state
             action = next_action
@@ -54,7 +62,6 @@ def sarsa_lambda(env, num_episodes, lambda_value):
 
 lambda_values = [0, 0.3, 0.5]
 
-# initialization
 all_returns = {}
 for lambda_val in lambda_values:
     all_returns[lambda_val] = np.zeros((num_runs, num_episodes))
@@ -65,7 +72,7 @@ for lambda_val in lambda_values:
 
 for lambda_val in lambda_values:
     for run in tqdm(range(num_runs), desc=f"Lambda {lambda_val}"):
-        Q, returns = sarsa_lambda(env, num_episodes, lambda_val)
+        Q, returns = sarsa(env, num_episodes, lambda_val)
         all_returns[lambda_val][run] = returns
         all_Q_values[lambda_val].append(Q)
 
@@ -77,10 +84,16 @@ for lambda_val in lambda_values:
 
 plt.figure(figsize=(10, 6))
 for lambda_val in lambda_values:
-    plt.plot(avg_returns[lambda_val], label=f'λ = {lambda_val}')
+    mean_returns = avg_returns[lambda_val]
+    std_dev = std_returns[lambda_val]
+
+    plt.plot(mean_returns, label=f'λ = {lambda_val}')
+    plt.fill_between(range(num_episodes),
+                     mean_returns - std_dev,
+                     mean_returns + std_dev,
+                     alpha=0.2)
 
 plt.ylim(bottom=-1000)
-
 plt.xlabel('Episode')
 plt.ylabel('Average Return')
 plt.title('SARSA(λ) Performance on CliffWalking')
@@ -89,8 +102,8 @@ plt.savefig('sarsa_lambda_performance.png')
 plt.close()
 
 
-# animation of value function heatmaps (GIF)
-def create_heatmap_animation(Q_values):
+# Animation of value function heatmaps (GIF)
+def heatmap_animation(Q_values):
     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
     fig.suptitle('Value Function Heatmaps')
 
@@ -111,7 +124,7 @@ def create_heatmap_animation(Q_values):
     anim.save('value_function_heatmaps.gif', writer='pillow', fps=5)
 
 
-create_heatmap_animation(all_Q_values)
+heatmap_animation(all_Q_values)
 
 print("Execution completed. Check the output files:")
 print("1. sarsa_lambda_performance.png - Combined plot of average returns")
