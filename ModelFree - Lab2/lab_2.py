@@ -23,7 +23,7 @@ EpisodeStats = namedtuple("Stats", ["episode_lengths", "episode_rewards"])
 
 # Helper functions
 ##################
-def blackjack_plot_value_function(V, title="Value Function", suptitle="MC Blackjack-v0"):
+def blackjack_plot_value_function(V, title="Value Function", suptitle="MC Blackjack-v1"):
     """
     Plots the value function as a surface plot.
     """
@@ -161,8 +161,14 @@ def blackjack_sample_policy(observation):
     """
     A policy that sticks if the player score is >= 20 and hits otherwise.
     """
-    raise NotImplementedError
+    # print(observation)
+    # Check if observation is a tuple of tuples
+    if isinstance(observation[0], tuple):
+        player_score, dealer_card, usable_ace = observation[0]
+    else:
+        player_score, dealer_card, usable_ace = observation
 
+    return 0 if player_score >= 20 else 1 
 
 def mc_prediction(policy, env, num_episodes, discount_factor=1.0, max_steps_per_episode=9999, print_=False):
     """
@@ -181,7 +187,41 @@ def mc_prediction(policy, env, num_episodes, discount_factor=1.0, max_steps_per_
         The state is a tuple and the value is a float.
     """
 
-    raise NotImplementedError
+    V = defaultdict(float)
+    Returns = defaultdict(list)
+
+    for i_episode in range(num_episodes):
+        episode = []
+        state = env.reset()
+        if isinstance(state, tuple) and isinstance(state[0], tuple):
+            state = state[0]
+        for t in range(max_steps_per_episode):
+            action = policy(state)
+            next_state, reward, terminated, truncated, _ = env.step(action)
+
+            if isinstance(next_state, tuple) and isinstance(next_state[0], tuple):
+                next_state = next_state[0]
+                
+            episode.append((state, action, reward))
+            done = terminated or truncated
+            if done:
+                break
+            state = next_state
+
+        G = 0
+        for t in reversed(range(len(episode))):
+            state, action, reward = episode[t]
+            G = discount_factor * G + reward
+
+            first_occurrence_idx = next(i for i, x in enumerate(episode) if x[0] == state)
+            if t == first_occurrence_idx:
+                Returns[state].append(G)
+                V[state] = np.mean(Returns[state])
+
+        if print_ and (i_episode + 1) % 1000 == 0:
+            print("\rEpisode {}/{}.".format(i_episode + 1, num_episodes), end="")
+
+    return V
 
 
 def argmax(numpy_array):
@@ -303,8 +343,8 @@ def q_learning(env, num_episodes, discount_factor=1.0, epsilon=0.05, alpha=0.5, 
 
 def run_mc():
     # Exploring the BlackjackEnv
-    # create env from https://gym.openai.com/envs/Blackjack-v0/
-    blackjack_env = gym.make('Blackjack-v0')
+    # create env from https://gym.openai.com/envs/Blackjack-v1/
+    blackjack_env = gym.make('Blackjack-v1')
     # let's see what's hidden inside this Object
     print(vars(blackjack_env))
 
@@ -320,9 +360,10 @@ def run_mc():
     random_action = blackjack_env.action_space.sample()
     print('random action:', random_action)
     # let's simulate one action
-    next_observation, reward, done, _ = blackjack_env.step(random_action)
+    next_observation, reward, terminated, truncated, _ = blackjack_env.step(random_action)
     print('next_observation:', next_observation)
     print('reward:', reward)
+    done = terminated or truncated
     print('done:', done)
 
     print("\nmc_prediction 10,000_steps\n")
