@@ -226,7 +226,9 @@ def mc_prediction(policy, env, num_episodes, discount_factor=1.0, max_steps_per_
 
 def argmax(numpy_array):
     """ argmax implementation that chooses randomly between ties """
-    raise NotImplementedError
+    max_value = np.max(numpy_array)
+    max_indices = np.where(numpy_array == max_value)[0]
+    return np.random.choice(max_indices)
 
 
 def make_epsilon_greedy_policy(Q, epsilon, nA):
@@ -242,10 +244,14 @@ def make_epsilon_greedy_policy(Q, epsilon, nA):
     Returns:
         A function that takes the observation as an argument and returns
         the probabilities for each action in the form of a numpy array of length nA.
-
     """
 
-    raise NotImplementedError
+    def policy_fn(observation):
+        A = np.ones(nA, dtype=float) * epsilon / nA
+        best_action = argmax(Q[observation])
+        A[best_action] += (1.0 - epsilon)
+        return A
+
     return policy_fn
 
 
@@ -259,7 +265,7 @@ def mc_control_epsilon_greedy(env, num_episodes, discount_factor=1.0, epsilon=0.
         env: OpenAI gym environment.
         num_episodes: Number of episodes to sample.
         discount_factor: Gamma discount factor.
-        epsilon: Chance the sample a random action. Float betwen 0 and 1.
+        epsilon: Chance to sample a random action. Float between 0 and 1.
         print_: print every num of episodes - don't print anything if False
     Returns:
         A tuple (Q, policy).
@@ -267,7 +273,50 @@ def mc_control_epsilon_greedy(env, num_episodes, discount_factor=1.0, epsilon=0.
         policy is a function that takes an observation as an argument and returns
         action probabilities
     """
-    raise NotImplementedError
+
+    returns_sum = defaultdict(float)
+    returns_count = defaultdict(float)
+    Q_values = defaultdict(lambda: np.zeros(env.action_space.n))
+
+    # policy to be following
+    policy = make_epsilon_greedy_policy(Q_values, epsilon, env.action_space.n)
+
+    for index_episode in range(num_episodes):
+        episode = []
+        state = env.reset()
+        if isinstance(state, tuple) and isinstance(state[0], tuple):
+            state = state[0]
+
+        for t in range(max_steps_per_episode):
+            probs = policy(state)
+            action = np.random.choice(np.arange(len(probs)), p=probs)
+            next_state, reward, terminated, truncated, _ = env.step(action)
+            if isinstance(next_state, tuple) and isinstance(next_state[0], tuple):
+                next_state = next_state[0]
+            episode.append((state, action, reward))
+            if terminated or truncated:
+                break
+            state = next_state
+
+        # find all (state, action) pairs we've visited in this episode
+        sa_in_episode = set([(tuple(x[0]), x[1]) for x in episode])
+        for state, action in sa_in_episode:
+            sa_pair = (state, action)
+            # Find the first
+            firstmatch = next(i for i, x in enumerate(episode)
+                                       if tuple(x[0]) == state and x[1] == action)
+            # sum up all rewards since the first match
+            G = sum([x[2] * (discount_factor ** i) for i, x in enumerate(episode[firstmatch:])])
+            # calc average return for this state over all sampled episodes
+            returns_sum[sa_pair] += G
+            returns_count[sa_pair] += 1.0
+            Q_values[state][action] = returns_sum[sa_pair] / returns_count[sa_pair]
+
+        if print_ and index_episode % 1000 == 0:
+            print("\rEpisode {}/{}.".format(index_episode + 1, num_episodes), end="")
+            sys.stdout.flush()
+
+    return Q_values, policy
 
 
 def SARSA(env, num_episodes, discount_factor=1.0, epsilon=0.1, alpha=0.5, print_=False):
@@ -386,6 +435,18 @@ def run_mc():
         action_value = np.max(actions)
         values[state] = action_value
     blackjack_plot_value_function(values, title="Optimal Value Function")
+
+    print("\nmc_control_epsilon_greedy\n")
+    Q, policy = mc_control_epsilon_greedy(
+        blackjack_env, num_episodes=500000, epsilon=0.1, print_=True)
+
+    # Convert Q(s,a) to V(s) by taking the max action value for each state
+    V = defaultdict(float)
+    for state, action_values in Q.items():
+        V[state] = np.max(action_values)
+
+    # Plot the state-value function
+    blackjack_plot_value_function(V, title="Optimal State-Value Function")
 
 
 def run_td():
