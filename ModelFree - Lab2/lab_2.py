@@ -247,6 +247,7 @@ def make_epsilon_greedy_policy(Q, epsilon, nA):
     """
 
     def policy_fn(observation):
+        # Convert the observation to a hashable type
         A = np.ones(nA, dtype=float) * epsilon / nA
         best_action = argmax(Q[observation])
         A[best_action] += (1.0 - epsilon)
@@ -348,12 +349,34 @@ def SARSA(env, num_episodes, discount_factor=1.0, epsilon=0.1, alpha=0.5, print_
         episode_lengths=np.zeros(num_episodes),
         episode_rewards=np.zeros(num_episodes))
 
-    # Update statistics after getting a reward - use within loop, call the following lines
-    # stats.episode_rewards[i_episode] += reward
-    # stats.episode_lengths[i_episode] = t
 
-    raise NotImplementedError
+    for episode in range(num_episodes):
+        state, _ = env.reset()
+        action_probs = policy(state)
+        action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
 
+        for t in itertools.count():
+            # Take a step
+            next_state, reward, terminated, truncated, _ = env.step(action)
+            stats.episode_rewards[episode] += reward
+            stats.episode_lengths[episode] = t
+
+            # Choose next action from next state using policy
+            next_action_probs = policy(next_state)
+            next_action = np.random.choice(np.arange(len(next_action_probs)), p=next_action_probs)
+
+            # SARSA update rule
+            td_target = reward + discount_factor * Q[next_state][next_action]
+            td_delta = td_target - Q[state][action]
+            Q[state][action] += alpha * td_delta
+
+            if terminated or truncated:
+                break
+
+            state = next_state
+            action = next_action
+
+    return Q, stats
 
 def q_learning(env, num_episodes, discount_factor=1.0, epsilon=0.05, alpha=0.5, print_=False):
     """
@@ -385,9 +408,31 @@ def q_learning(env, num_episodes, discount_factor=1.0, epsilon=0.05, alpha=0.5, 
         episode_lengths=np.zeros(num_episodes),
         episode_rewards=np.zeros(num_episodes))
 
-    # Update statistics after getting a reward - use within loop, call the following lines
-    # stats.episode_rewards[i_episode] += reward
-    # stats.episode_lengths[i_episode] = t
+    for episode in range(num_episodes):
+        state, _ = env.reset()
+        for t in itertools.count():
+            # Choose action according to epsilon-greedy policy
+            action_probs = policy(state)
+            action = np.random.choice(np.arange(len(action_probs)), p=action_probs)
+
+            # Take a step
+            next_state, reward, terminated, truncated, _ = env.step(action)
+            stats.episode_rewards[episode] += reward
+            stats.episode_lengths[episode] = t
+
+            # Q-learning update rule
+            best_next_action = argmax(Q[next_state])
+            td_target = reward + discount_factor * Q[next_state][best_next_action]
+            td_delta = td_target - Q[state][action]
+            Q[state][action] += alpha * td_delta
+
+            if terminated or truncated:
+                break
+
+            state = next_state
+
+    return Q, stats
+
 
 
 def run_mc():
