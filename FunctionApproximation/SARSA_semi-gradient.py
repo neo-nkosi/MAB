@@ -1,9 +1,9 @@
+import os
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
-from math import floor
-from tiles3 import  IHT, tiles
-
+from tiles3 import IHT, tiles
+from gym.wrappers import RecordVideo
 
 class SARSAAgent:
     def __init__(self, num_actions, num_tilings=8, tile_size=8, alpha=0.1, gamma=1.0, epsilon=0.1):
@@ -52,13 +52,6 @@ def train_sarsa(env, agent, num_episodes):
 
         while True:
             next_state, reward, terminated, truncated, _ = env.step(action)
-
-            # Explicitly check if terminated and truncated are of boolean type
-            if not isinstance(terminated, bool):
-                terminated = bool(terminated)
-            if not isinstance(truncated, bool):
-                truncated = bool(truncated)
-
             done = terminated or truncated
             episode_length += 1
 
@@ -69,15 +62,13 @@ def train_sarsa(env, agent, num_episodes):
 
             next_action = agent.choose_action(next_state)
             agent.update(state, action, reward, next_state, next_action, done)
-
             state = next_state
             action = next_action
 
     return episode_lengths
 
-
 # Main execution
-def run_experiment(num_runs=100, num_episodes=500):
+def run_experiment(num_runs=1, num_episodes=5000):
     env = gym.make('MountainCar-v0')
     all_episode_lengths = []
 
@@ -104,15 +95,34 @@ def run_experiment(num_runs=100, num_episodes=500):
 # Run the experiment
 trained_agent = run_experiment()
 
-# Render the learned policy
+# Updated render_policy function to include video recording
 def render_policy(env, agent):
+    # Set exploration to 0 (no random actions)
+    agent.epsilon = 0.0
     state, _ = env.reset()
     done = False
-    while not done:
+    step_count = 0
+    
+    # Ensure video folder exists
+    if not os.path.exists("./video"):
+        os.makedirs("./video")
+    
+    # Wrapping the environment to record a video
+    env = RecordVideo(env, "./video", episode_trigger=lambda x: True)  # Save video to the 'video' folder
+    
+    while not done and step_count < 200: 
+        print(f"step {step_count} of 200 complete")
         action = agent.choose_action(state)
         state, _, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
+        step_count += 1
+
+    if done and step_count < 200:
+        print(f"Goal reached in {step_count} steps!")
+    else:
+        print(f"Episode ended in {step_count} steps without reaching the goal.")
+    
     env.close()
 
-# Uncomment the following line to render the learned policy
-# render_policy(gym.make('MountainCar-v0', render_mode='human'), trained_agent)
+# Uncomment the following line to render the learned policy and record the video
+render_policy(gym.make('MountainCar-v0', render_mode='rgb_array'), trained_agent)
